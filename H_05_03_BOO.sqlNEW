@@ -1,0 +1,127 @@
+CREATE TABLE my_employees AS
+SELECT * FROM hr.employees;
+
+
+  
+  INSERT INTO my_employees (EMPLOYEE_ID, FIRST_NAME, LAST_NAME, EMAIL, HIRE_DATE, JOB_ID, SALARY, DEPARTMENT_ID)
+VALUES (208,'Olha',  'Beshota', 'minkolga7', SYSDATE,  'IT_QA', 6000, 90 );
+
+
+
+select *
+  from my_employees;
+  
+  
+  
+  
+  
+SELECT 
+    DEPARTMENT_ID AS "Ід департаменту",
+    COUNT(*) AS "Кількість співробітників"
+FROM my_employees
+GROUP BY DEPARTMENT_ID
+ORDER BY DEPARTMENT_ID;
+
+
+SELECT EMAIL || 'minkolga7@gmail.com' AS FULL_EMAIL
+FROM my_employees
+WHERE EMPLOYEE_ID = 208; 
+
+
+
+
+
+
+
+
+DECLARE
+    v_recipient VARCHAR2(50);
+    v_subject   VARCHAR2(50) := 'test_subject';
+    v_mes       VARCHAR2(5000) := 'Вітаю шановний! </br> Ось звіт з нашої компанії: </br></br>';
+BEGIN
+    SELECT
+        v_mes
+        || '<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<style>
+table,
+th,
+td {
+border: 1px solid;
+}
+.center {
+text-align: center;
+}
+</style>
+</head>
+<body>
+<table
+border="1"
+cellspacing="0"
+cellpadding="2"
+rules="GROUPS"
+frame="HSIDES"
+>
+<thead>
+<tr align="left">
+<th>Ід департаменту</th>
+<th>Кількість співробітників</th>
+</tr>
+</thead>
+<tbody>
+'
+        || list_html
+        || '
+</tbody>
+</table>
+</body>
+</html>' AS html_table
+    INTO v_mes
+    FROM
+        (
+            SELECT
+                LISTAGG('<tr align=left>
+<td>'
+                        || department_id
+                        || '</td>'
+                        || '
+<td class=''center''> '
+                        || employee_count
+                        || '</td>
+</tr>', '<tr>') WITHIN GROUP(
+                ORDER BY
+                    employee_count
+                ) AS list_html
+            FROM
+                (
+                    SELECT
+                        department_id,
+                        COUNT(*) AS employee_count
+                    FROM
+                        employees
+                    WHERE
+                        department_id IS NOT NULL
+                    GROUP BY
+                        department_id
+                )
+        );
+
+    SELECT
+        em.email
+    INTO v_recipient
+    FROM
+        employees em
+    WHERE
+        employee_id = 999;
+
+    v_mes := v_mes || '</br></br> З повагою!';
+    sys.sendmail(
+                p_recipient => v_recipient || '@gmail.com',
+                p_subject   => v_subject,
+                p_message   => v_mes || ' '
+    );
+
+END;
+/
